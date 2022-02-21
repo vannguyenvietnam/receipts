@@ -7,7 +7,8 @@ module Receipts
     end
 
     def initialize(attributes = {})
-      super(page_size: "LETTER")
+      page_size = attributes[:page_size] || "LETTER"
+      super(page_size: page_size)
       setup_fonts attributes[:font]
 
       @title = attributes.fetch(:title, self.class.title)
@@ -17,7 +18,12 @@ module Receipts
 
     def generate_from(attributes)
       return if attributes.empty?
-
+      
+      attributes[:company] ||= {}
+      attributes[:details] ||= []
+      attributes[:recipient] ||= []
+      attributes[:line_items] ||= []
+      attributes[:footer] ||= ''
       company = attributes.fetch(:company)
       header company: company
       render_details attributes.fetch(:details)
@@ -44,6 +50,8 @@ module Receipts
     end
 
     def header(company: {}, height: 16)
+      return if company.blank?
+
       logo = company[:logo]
 
       if logo.nil?
@@ -57,11 +65,15 @@ module Receipts
     end
 
     def render_details(details, margin_top: 16)
+      return if details.blank?
+
       move_down margin_top
       table(details, cell_style: {borders: [], inline_format: true, padding: [0, 8, 2, 0]})
     end
 
     def render_billing_details(company:, recipient:, margin_top: 16)
+      return if company.blank? || recipient.blank?
+
       move_down margin_top
 
       company_details = [
@@ -80,6 +92,8 @@ module Receipts
     end
 
     def render_line_items(line_items, margin_top: 30)
+      return if line_items.blank?
+
       move_down margin_top
 
       borders = line_items.length - 2
@@ -91,11 +105,15 @@ module Receipts
     end
 
     def render_footer(message, margin_top: 30)
+      return if message.blank?
+
       move_down margin_top
       text message, inline_format: true
     end
 
     def default_message(company:)
+      return if company.blank?
+      
       "For questions, contact us anytime at <color rgb='326d92'><link href='mailto:#{company.fetch(:email)}?subject=Question about my receipt'><b>#{company.fetch(:email)}</b></link></color>."
     end
   end
